@@ -31,10 +31,10 @@ enum CryptoError {
 }
 
 fn derive_key(passphrase: &str, salt: &[u8]) -> Result<Key, CryptoError> {
-    let mut key = [0u8; 32];
+    let mut key = [0u8; KEY_LEN];
 
     Argon2::default()
-        .hash_password_into(passphrase.as_bytes(), &salt, &mut key)
+        .hash_password_into(passphrase.as_bytes(), salt, &mut key)
         .map_err(|e| CryptoError::Argon2(e.to_string()))?;
 
     Ok(key)
@@ -104,4 +104,26 @@ fn main() -> Result<(), CryptoError> {
     assert!(decrypt(&secret, &wrong_passphrase).is_err());
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn roundtrip() -> Result<(), CryptoError> {
+        let message = "alice bob chloe".to_string();
+        let passphrase = "Abc@1234".to_string();
+
+        let secret = encrypt(&message, &passphrase)?;
+        let decrypted = decrypt(&secret, &passphrase)?;
+
+        assert_eq!(&message, &decrypted, "Message don't match");
+
+        let wrong_passphrase = "This is wrong passphrase".to_string();
+
+        assert!(decrypt(&secret, &wrong_passphrase).is_err());
+
+        Ok(())
+    }
 }
