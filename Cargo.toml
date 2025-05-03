@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://github.com/sumit03guha/encryptor"
 keywords = ["wallet", "seed", "aes-gcm", "argon2id", "encryption"]
 categories = ["cryptography"]
-# publish     = true                       
+publish = true
 
 [dependencies]
 aes-gcm = "0.10.3"
