@@ -1,5 +1,9 @@
 # encryptor
 
+[![Crates.io](https://img.shields.io/crates/v/encryptor.svg)](https://crates.io/crates/encryptor)
+[![Docs.rs](https://docs.rs/encryptor/badge.svg)](https://docs.rs/encryptor)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
 Encrypt a **Web3 wallet secret phrase** with an easy-to-remember password
 and store only the resulting ciphertext string.
 
@@ -32,10 +36,4 @@ assert_eq!(phrase, decrypt(&blob, pass)?);
 
 * [`encrypt`] – passphrase → ciphertext string
 * [`decrypt`] – ciphertext string → original secret phrase
-* [`derive_key`] – raw Argon2id helper (mostly for advanced users)
 * [`CryptoError`] – unified error enum
-
-## License
-
-This project is licensed under the **MIT License**.  
-See the [LICENSE](./LICENSE) file for details.
