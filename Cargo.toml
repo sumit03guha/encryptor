@@ -2,7 +2,7 @@
 name = "encryptor"
 version = "0.1.0"
 edition = "2024"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 description = "Password-based encryption for Web3 wallet seed phrases"
 readme = "README.md"
 repository = "https://github.com/sumit03guha/encryptor"
