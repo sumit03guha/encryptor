@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    name: ${{ matrix.toolchain }} • ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.toolchain == 'nightly' }} 
+    strategy:
+      matrix:
+        toolchain: [stable, beta, nightly]
+        os: [ubuntu-latest]
+      fail-fast: false
+
+    steps:
+      # --- checkout sources --------------------------------------------------
+      - uses: actions/checkout@v4
+
+      # --- set up the Rust toolchain ----------------------------------------
+      - name: Install Rust (${{ matrix.toolchain }})
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          profile: minimal
+          override: true
+          components: clippy, rustfmt
+
+      # --- cache the Cargo target dir ---------------------------------------
+      - name: Cache cargo registry + build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: >
+            ${{ runner.os }}-${{ matrix.toolchain }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      # ---------- STAGE 1: formatting ---------------------------------------
+      - name: rustfmt
+        run: cargo fmt --check
+
+      # ---------- STAGE 2: clippy lints -------------------------------------
+      - name: clippy
+        run: cargo clippy --all-targets --all-features --locked -- -D warnings
+
+      # ---------- STAGE 3: test suite ---------------------------------------
+      - name: tests
+        run: cargo test --all-features --verbose
+
+      # ---------- STAGE 4: doc build (skip dependencies) --------------------
+      - name: docs
+        run: cargo doc --no-deps --all-features --verbose
+
