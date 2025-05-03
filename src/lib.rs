@@ -44,6 +44,7 @@ use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
 
 pub mod error;
 pub use error::CryptoError;
+use zeroize::Zeroize;
 
 /// Length in **bytes** of the random salt prepended to the ciphertext blob.
 ///
@@ -61,9 +62,7 @@ pub const KEY_LEN: usize = 32;
 
 /// In-memory representation of the 256-bit key returned by [`derive_key`].
 ///
-/// The key is **not** automatically zeroed.  Consider wiping it manually
-/// with the [`zeroize`](https://docs.rs/zeroize) crate if you hold it
-/// longer than a local stack frame.
+/// The key is automatically zeroed.
 pub type Key = [u8; KEY_LEN];
 
 /// Encrypt UTF-8 data with a **password**, returning a single Base64URL
@@ -88,9 +87,12 @@ pub fn encrypt(msg: &str, passphrase: &str) -> Result<String, CryptoError> {
     OsRng.fill_bytes(&mut salt);
     OsRng.fill_bytes(&mut nonce);
 
-    let key = derive_key(passphrase, &salt)?;
+    let mut key = derive_key(passphrase, &salt)?;
     let cipher =
         Aes256Gcm::new_from_slice(&key).map_err(|e| CryptoError::Aes256Gcm(e.to_string()))?;
+
+    key.zeroize();
+
     let nonce = Nonce::from_slice(&nonce);
 
     let ciphertext = cipher
