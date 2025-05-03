@@ -4,33 +4,15 @@ use aes_gcm::{
 };
 use argon2::Argon2;
 use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
-use thiserror::Error;
-
-const SALT_LEN: usize = 32;
-const NONCE_LEN: usize = 12;
+pub mod error;
+pub use error::CryptoError;
+pub const SALT_LEN: usize = 32;
+pub const NONCE_LEN: usize = 12;
 
 const KEY_LEN: usize = 32;
-type Key = [u8; KEY_LEN];
+pub type Key = [u8; KEY_LEN];
 
-#[derive(Debug, Error)]
-enum CryptoError {
-    #[error("Argon2 error: {0}")]
-    Argon2(String),
-
-    #[error("Aes256Gcm error: {0}")]
-    Aes256Gcm(String),
-
-    #[error("Utf8 error: {0}")]
-    Utf8(String),
-
-    #[error("BaseUrl Decode error: {0}")]
-    BaseUrlDecode(String),
-
-    #[error("Decode error: {0}")]
-    Decode(String),
-}
-
-fn derive_key(passphrase: &str, salt: &[u8]) -> Result<Key, CryptoError> {
+pub fn derive_key(passphrase: &str, salt: &[u8]) -> Result<Key, CryptoError> {
     let mut key = [0u8; KEY_LEN];
 
     Argon2::default()
@@ -40,7 +22,7 @@ fn derive_key(passphrase: &str, salt: &[u8]) -> Result<Key, CryptoError> {
     Ok(key)
 }
 
-fn encrypt(msg: &str, passphrase: &str) -> Result<String, CryptoError> {
+pub fn encrypt(msg: &str, passphrase: &str) -> Result<String, CryptoError> {
     let mut salt = [0; SALT_LEN];
     let mut nonce = [0; NONCE_LEN];
     OsRng.fill_bytes(&mut salt);
@@ -64,7 +46,7 @@ fn encrypt(msg: &str, passphrase: &str) -> Result<String, CryptoError> {
     Ok(BASE64_URL_SAFE_NO_PAD.encode(blob))
 }
 
-fn decrypt(secret: &str, passphrase: &str) -> Result<String, CryptoError> {
+pub fn decrypt(secret: &str, passphrase: &str) -> Result<String, CryptoError> {
     let decoded = BASE64_URL_SAFE_NO_PAD
         .decode(secret)
         .map_err(|e| CryptoError::BaseUrlDecode(e.to_string()))?;
@@ -86,44 +68,4 @@ fn decrypt(secret: &str, passphrase: &str) -> Result<String, CryptoError> {
         .map_err(|e| CryptoError::Aes256Gcm(e.to_string()))?;
 
     Ok(String::from_utf8(plaintext).map_err(|e| CryptoError::Utf8(e.to_string()))?)
-}
-
-fn main() -> Result<(), CryptoError> {
-    let message = "alice bob chloe".to_string();
-    let passphrase = "Abc@1234".to_string();
-
-    let secret = encrypt(&message, &passphrase)?;
-    println!("The secret is : {}", secret);
-
-    let decrypted = decrypt(&secret, &passphrase)?;
-
-    assert_eq!(&message, &decrypted, "Message don't match");
-
-    let wrong_passphrase = "This is wrong passphrase".to_string();
-
-    assert!(decrypt(&secret, &wrong_passphrase).is_err());
-
-    Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn roundtrip() -> Result<(), CryptoError> {
-        let message = "alice bob chloe".to_string();
-        let passphrase = "Abc@1234".to_string();
-
-        let secret = encrypt(&message, &passphrase)?;
-        let decrypted = decrypt(&secret, &passphrase)?;
-
-        assert_eq!(&message, &decrypted, "Message don't match");
-
-        let wrong_passphrase = "This is wrong passphrase".to_string();
-
-        assert!(decrypt(&secret, &wrong_passphrase).is_err());
-
-        Ok(())
-    }
 }
