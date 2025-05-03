@@ -32,7 +32,6 @@
 //! ### API overview
 //! * [`encrypt`] – passphrase → ciphertext string  
 //! * [`decrypt`] – ciphertext string → original secret phrase  
-//! * [`derive_key`] – raw Argon2id helper (mostly for advanced users)  
 //! * [`CryptoError`] – unified error enum
 
 use aes_gcm::{
@@ -60,8 +59,6 @@ pub const NONCE_LEN: usize = 12;
 /// Number of bytes in the derived symmetric key (`256 bits`).
 pub const KEY_LEN: usize = 32;
 
-/// In-memory representation of the 256-bit key returned by [`derive_key`].
-///
 /// The key is automatically zeroed.
 pub type Key = [u8; KEY_LEN];
 
@@ -150,6 +147,8 @@ pub fn decrypt(secret: &str, passphrase: &str) -> Result<String, CryptoError> {
     String::from_utf8(plaintext).map_err(|e| CryptoError::Utf8(e.to_string()))
 }
 
+/// In-memory representation of the 256-bit key returned by [`derive_key`].
+///
 /// Derive a 256-bit symmetric key from a user **password** and random **salt**
 /// using Argon2id.
 ///
