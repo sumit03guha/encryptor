@@ -66,32 +66,6 @@ pub const KEY_LEN: usize = 32;
 /// longer than a local stack frame.
 pub type Key = [u8; KEY_LEN];
 
-/// Derive a 256-bit symmetric key from a user **password** and random **salt**
-/// using Argon2id.
-///
-/// `encryptor` calls this internally, but you can expose configurable
-/// Argon2 parameters in your own application by wrapping this function.
-///
-/// ### Errors
-/// * `CryptoError::Argon2` — underlying Argon2 implementation refused the
-///   parameters (e.g. not enough memory on the host).
-///
-/// ### Example
-/// ```rust
-/// # use encryptor::{derive_key, SALT_LEN};
-/// let salt = [0u8; SALT_LEN];
-/// let key  = derive_key("correct horse battery staple", &salt)?;
-/// assert_eq!(32, key.len());
-/// # Ok::<(), encryptor::CryptoError>(())
-/// ```
-pub fn derive_key(passphrase: &str, salt: &[u8]) -> Result<Key, CryptoError> {
-    let mut key = [0u8; KEY_LEN];
-    Argon2::default()
-        .hash_password_into(passphrase.as_bytes(), salt, &mut key)
-        .map_err(|e| CryptoError::Argon2(e.to_string()))?;
-    Ok(key)
-}
-
 /// Encrypt UTF-8 data with a **password**, returning a single Base64URL
 /// string (`no = padding`) that embeds salt, nonce, and ciphertext.
 ///
@@ -172,4 +146,26 @@ pub fn decrypt(secret: &str, passphrase: &str) -> Result<String, CryptoError> {
         .map_err(|e| CryptoError::Aes256Gcm(e.to_string()))?;
 
     String::from_utf8(plaintext).map_err(|e| CryptoError::Utf8(e.to_string()))
+}
+
+/// Derive a 256-bit symmetric key from a user **password** and random **salt**
+/// using Argon2id.
+///
+/// ### Errors
+/// * `CryptoError::Argon2` — underlying Argon2 implementation refused the
+///   parameters (e.g. not enough memory on the host).
+///
+/// ### Example
+/// ```rust, ignore
+/// let salt = [0u8; SALT_LEN];
+/// let key  = derive_key("correct horse battery staple", &salt)?;
+/// assert_eq!(32, key.len());
+/// # Ok::<(), encryptor::CryptoError>(())
+/// ```
+fn derive_key(passphrase: &str, salt: &[u8]) -> Result<Key, CryptoError> {
+    let mut key = [0u8; KEY_LEN];
+    Argon2::default()
+        .hash_password_into(passphrase.as_bytes(), salt, &mut key)
+        .map_err(|e| CryptoError::Argon2(e.to_string()))?;
+    Ok(key)
 }
