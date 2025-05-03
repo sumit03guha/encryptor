@@ -35,4 +35,7 @@ assert_eq!(phrase, decrypt(&blob, pass)?);
 * [`derive_key`] – raw Argon2id helper (mostly for advanced users)
 * [`CryptoError`] – unified error enum
 
-License: MIT OR Apache-2.0
+## License
+
+This project is licensed under the **MIT License**.  
+See the [LICENSE](./LICENSE) file for details.
